@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#C4532A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ricette">
+  <title>Ricette</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="media/icona.png">
+  <link rel="icon" href="media/icona.png">
+  <style>
+    :root {
+      --inchiostro: #3a2a22;
+      --crema: #fff8ef;
+      --pesca: #f3e6d4;
+      --arancio: #c4532a;
+      --oro: #e2b15a;
+      --legno: #8a5a34;
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      font-family: "Avenir Next", Avenir, "Gill Sans", "Trebuchet MS", sans-serif;
+      color: var(--inchiostro);
+      background: #e7d3bc;
+    }
+    button, input { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    #app { min-height: 100dvh; }
+    .palco {
+      min-height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: #f6efe4 url("media/cucina.jpg") center / cover no-repeat;
+      padding: calc(16px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom));
+    }
+    .titolo {
+      margin: 4px 8px 0;
+      text-align: center;
+      font-family: Palatino, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+      font-size: clamp(1.7rem, 6vw, 2.15rem);
+      font-weight: 600;
+      line-height: 1.05;
+      letter-spacing: 0.01em;
+    }
+    .cuoco {
+      flex: 1 1 auto;
+      min-height: 180px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      pointer-events: none;
+    }
+    .cuoco video {
+      height: min(46dvh, 420px);
+      width: auto;
+      max-width: 100%;
+      object-fit: contain;
+    }
+    .griglia {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .scheda {
+      text-align: left;
+      border: 1px solid rgba(58, 42, 34, 0.12);
+      background: rgba(255, 248, 239, 0.94);
+      border-radius: 14px;
+      min-height: 72px;
+      padding: 10px 12px;
+    }
+    .scheda strong { display: block; font-size: 1rem; line-height: 1.2; }
+    .scheda span { display: block; margin-top: 4px; font-size: 0.82rem; color: #6d5648; }
+    .foglio {
+      min-height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      background: #c4a574 url("media/ricetta.jpg") center / cover no-repeat;
+      padding: calc(12px + env(safe-area-inset-top)) 14px calc(20px + env(safe-area-inset-bottom));
+    }
+    .testa {
+      background: var(--arancio);
+      color: var(--crema);
+      border-radius: 16px;
+      padding: 12px 12px 14px;
+      text-align: center;
+    }
+    .riga {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .ghost, .indietro {
+      border: 0;
+      background: rgba(255, 248, 239, 0.92);
+      color: var(--inchiostro);
+      border-radius: 999px;
+      min-height: 36px;
+      padding: 0 14px;
+      font-size: 0.85rem;
+      letter-spacing: 0.04em;
+    }
+    .passo-n { font-size: 0.82rem; }
+    .testa h1 {
+      margin: 8px 0 0;
+      font-family: Palatino, "Iowan Old Style", Georgia, serif;
+      font-size: clamp(1.45rem, 5.4vw, 1.9rem);
+      line-height: 1.05;
+    }
+    .prep { margin: 6px 0 0; font-size: 0.78rem; letter-spacing: 0.04em; opacity: 0.85; }
+    .durata { margin: 0; color: var(--oro); font-weight: 650; }
+    .blocco {
+      margin-top: 10px;
+      background: rgba(255, 248, 239, 0.94);
+      border-radius: 16px;
+      padding: 12px;
+    }
+    .blocco h2 {
+      margin: 0 0 8px;
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+    }
+    .chip-riga, .azioni {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+    .chip {
+      border: 1px solid rgba(58, 42, 34, 0.18);
+      background: transparent;
+      border-radius: 999px;
+      min-height: 36px;
+      padding: 0 12px;
+    }
+    .chip.attiva { background: var(--arancio); color: var(--crema); border-color: var(--arancio); }
+    .peso {
+      width: 4.6rem;
+      min-height: 36px;
+      border: 1px solid rgba(58, 42, 34, 0.18);
+      border-radius: 10px;
+      background: #fff;
+      padding: 0 8px;
+    }
+    .dose {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 7px 0;
+      border-top: 1px solid rgba(58, 42, 34, 0.08);
+      font-size: 0.98rem;
+    }
+    .dose:first-of-type { border-top: 0; }
+    .dose b { font-weight: 600; text-align: right; }
+    .adesso {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .anello {
+      width: 92px;
+      height: 92px;
+      flex: 0 0 auto;
+      border: 0;
+      background: transparent;
+      padding: 0;
+      position: relative;
+    }
+    .anello svg { width: 100%; height: 100%; }
+    .anello em {
+      position: absolute;
+      inset: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-style: normal;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+    .adesso h3 { margin: 0; font-size: 1.25rem; }
+    .adesso p, .nota { margin: 4px 0 0; color: #6d5648; }
+    .tocca { margin: 0 0 4px; font-size: 0.75rem; letter-spacing: 0.03em; color: #8a7264; }
+    .azioni { margin-top: 12px; }
+    .azioni button {
+      flex: 1 1 0;
+      min-height: 64px;
+      border: 0;
+      border-radius: 14px;
+      font-size: 1.2rem;
+      letter-spacing: 0.04em;
+    }
+    .fatto { background: var(--arancio); color: var(--crema); }
+    .avvia { background: var(--oro); color: #3a2a22; }
+    .indietro { margin-top: 8px; background: transparent; }
+    .allarme {
+      margin-top: 10px;
+      background: #f6d7a8;
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+    .linea {
+      display: flex;
+      gap: 10px;
+      padding-bottom: 8px;
+    }
+    .punto {
+      width: 8px;
+      height: 8px;
+      margin-top: 6px;
+      border-radius: 50%;
+      background: #d9cbbd;
+      flex: 0 0 auto;
+    }
+    .linea.qui .punto { background: var(--arancio); }
+    .linea .nome { font-weight: 500; }
+    .linea.qui .nome { font-weight: 700; }
+    .meta { margin-left: auto; color: #8a7264; font-size: 0.8rem; white-space: nowrap; }
+    .orologio {
+      width: 100%;
+      min-height: 100dvh;
+      border: 0;
+      appearance: none;
+      background: var(--arancio);
+      color: var(--crema);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 18px;
+      padding: calc(28px + env(safe-area-inset-top)) 22px calc(32px + env(safe-area-inset-bottom));
+      cursor: pointer;
+    }
+    .orologio.scaduto { animation: lampeggio 1s ease-in-out infinite; }
+    @keyframes lampeggio {
+      50% { background: #a33b16; }
+    }
+    .orologio button.chiudi {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      width: min(280px, 78vw);
+      padding: 0;
+    }
+    .orologio svg { width: 100%; height: auto; }
+    .tempo {
+      font-family: Palatino, Georgia, serif;
+      font-size: clamp(3.2rem, 14vw, 4.6rem);
+      font-weight: 600;
+      line-height: 1;
+      margin-top: 8px;
+    }
+    .stato { letter-spacing: 0.06em; font-size: 0.85rem; opacity: 0.85; }
+    .orologio h1 { margin: 0; font-family: Palatino, Georgia, serif; font-size: clamp(1.8rem, 7vw, 2.4rem); }
+    .orologio .nota { color: rgba(255, 248, 239, 0.88); max-width: 28rem; }
+    .dopo { opacity: 0.9; max-width: 28rem; }
+    .dopo h2 { margin: 0; font-size: 1.15rem; font-weight: 600; }
+    .etichetta { margin: 0; font-size: 0.78rem; letter-spacing: 0.05em; opacity: 0.75; }
+    .fine h2 { margin: 0 0 6px; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const LOOP = [
+      "media/chef-sorriso.mp4",
+      "media/chef-mestolo.mp4",
+      "media/chef-occhiolino.mp4",
+      "media/chef-impasto.mp4",
+      "media/chef-saluto.mp4",
+    ];
+    const RICETTE = [
+      {
+        id: "aglio",
+        nome: "Aglio, olio e peperoncino",
+        scala: { tipo: "porzioni", base: 4, scelte: [2, 4, 6] },
+        ingredienti: [
+          { nome: "Spaghetti", parti: [{ n: 320, testo: " g" }] },
+          { nome: "Aglio", parti: [{ n: 2, testo: " spicchi" }] },
+          { nome: "Olio", parti: [{ n: 40, testo: " g" }] },
+          { nome: "Peperoncino", parti: [{ n: 1, testo: "" }] },
+          { nome: "Sale", parti: [{ n: 4, testo: " g" }] },
+        ],
+        fasi: [
+          { titolo: "Cottura", nota: "Scola al dente e salta in padella con aglio, olio e peperoncino.", minuti: 9, allarme: true, ripetizioni: 1 },
+        ],
+      },
+      {
+        id: "teglia",
+        nome: "Pizza in teglia",
+        scala: {
+          tipo: "teglia",
+          baseLarghezza: 30,
+          baseAltezza: 40,
+          scelte: [
+            { larghezza: 20, altezza: 30 },
+            { larghezza: 30, altezza: 40 },
+            { larghezza: 40, altezza: 40 },
+          ],
+        },
+        ingredienti: [
+          { nome: "Farina", parti: [{ n: 450, testo: " g" }] },
+          { nome: "Acqua", parti: [{ n: 315, testo: " g" }] },
+          { nome: "Sale", parti: [{ n: 13, testo: " g" }] },
+          { nome: "Olio", parti: [{ n: 14, testo: " g" }] },
+          { nome: "Lievito secco", parti: [{ n: 1, testo: " g" }] },
+        ],
+        fasi: [
+          { titolo: "Impasta", nota: "Incorda fino a una palla liscia. L'olio a fine impasto.", minuti: 20, allarme: false, ripetizioni: 1 },
+          { titolo: "Pieghe", nota: "Un giro di pieghe a tre. Ricopri.", minuti: 20, allarme: true, ripetizioni: 3 },
+          { titolo: "Lievitazione", nota: "Massa coperta, fino al raddoppio.", minuti: 180, allarme: true, ripetizioni: 1 },
+          { titolo: "Stendi", nota: "Teglia oliata. Stendi con i polpastrelli.", minuti: 10, allarme: false, ripetizioni: 1 },
+          { titolo: "Appretto", nota: "In teglia, finché è soffice.", minuti: 90, allarme: true, ripetizioni: 1 },
+          { titolo: "Cottura", nota: "Forno ben caldo. Fondo asciutto e macchiato.", minuti: 16, allarme: true, ripetizioni: 1 },
+        ],
+      },
+      {
+        id: "focaccia",
+        nome: "Focaccia genovese",
+        scala: { tipo: "litri", base: 0.375, scelte: [0.375, 0.75, 1.5] },
+        ingredienti: [
+          { nome: "Farina", parti: [{ n: 500, testo: " g" }] },
+          { nome: "Acqua", parti: [{ n: 375, testo: " g" }] },
+          { nome: "Sale nell'impasto", parti: [{ n: 5, testo: " g" }] },
+          { nome: "Olio nell'impasto", parti: [{ n: 20, testo: " g" }] },
+          { nome: "Lievito secco", parti: [{ n: 2, testo: " g" }] },
+          { nome: "Salamoia", parti: [{ n: 40, testo: " g acqua" }, { n: 30, testo: " g olio" }, { n: 15, testo: " g sale" }] },
+        ],
+        fasi: [
+          { titolo: "Impasta", nota: "Impasto morbido. Poco sale: il resto va nella salamoia.", minuti: 15, allarme: false, ripetizioni: 1 },
+          { titolo: "Pieghe", nota: "Pieghe a tre. Al suono del timer fai il giro successivo.", minuti: 20, allarme: true, ripetizioni: 3 },
+          { titolo: "Puntata", nota: "Coperto, volume quasi doppio.", minuti: 90, allarme: true, ripetizioni: 1 },
+          { titolo: "Stendi", nota: "Teglia con olio sul fondo. Buchi con le dita, senza schiacciare fino in fondo.", minuti: 10, allarme: false, ripetizioni: 1 },
+          { titolo: "Lievita in teglia", nota: "Di nuovo soffice: i buchi si richiudono un poco.", minuti: 60, allarme: true, ripetizioni: 1 },
+          { titolo: "Salamoia", nota: "Emulsione di acqua, olio e sale sulla superficie.", minuti: 2, allarme: false, ripetizioni: 1 },
+          { titolo: "Cottura", nota: "Forno caldo. Fondo dorato, superficie lucida.", minuti: 18, allarme: true, ripetizioni: 1 },
+        ],
+      },
+      {
+        id: "pala",
+        nome: "Pizza alla pala",
+        scala: { tipo: "panetti", base: 2, scelte: [1, 2, 3, 4], peso: 450 },
+        ingredienti: [
+          { nome: "Farina", parti: [{ n: 500, testo: " g" }] },
+          { nome: "Acqua", parti: [{ n: 375, testo: " g" }] },
+          { nome: "Sale", parti: [{ n: 13, testo: " g" }] },
+          { nome: "Olio", parti: [{ n: 10, testo: " g" }] },
+          { nome: "Lievito secco", parti: [{ n: 2, testo: " g" }] },
+        ],
+        fasi: [
+          { titolo: "Impasta", nota: "Idratazione alta. Incorda senza scaldare l'impasto.", minuti: 15, allarme: false, ripetizioni: 1 },
+          { titolo: "Pieghe", nota: "Un giro di pieghe, poi coperto.", minuti: 20, allarme: true, ripetizioni: 3 },
+          { titolo: "Frigo", nota: "Contenitore chiuso in frigorifero, 18 ore.", minuti: 1080, allarme: true, ripetizioni: 1 },
+          { titolo: "Rinvenimento", nota: "Fuori dal frigo, coperto, prima di stendere.", minuti: 120, allarme: true, ripetizioni: 1 },
+          { titolo: "Stendi sulla pala", nota: "Rettangolo, poca farina. Condisci dopo la stesura.", minuti: 8, allarme: false, ripetizioni: 1 },
+          { titolo: "Cottura", nota: "Forno al massimo, leccarda già calda. Gira a metà se il fondo è chiaro.", minuti: 8, allarme: true, ripetizioni: 1 },
+        ],
+      },
+    ];
+
+    const stato = {
+      vista: "oggi",
+      ricettaId: "teglia",
+      passoIndex: 0,
+      finita: false,
+      running: false,
+      remaining: 20 * 60,
+      endsAt: 0,
+      scala: {},
+      suonato: false,
+    };
+
+    function espandi(fasi) {
+      return fasi.flatMap((fase) => {
+        const n = fase.ripetizioni < 1 ? 1 : fase.ripetizioni;
+        const durata = fase.minuti < 1 ? 1 : fase.minuti;
+        return Array.from({ length: n }, (_, i) => ({
+          titolo: n === 1 ? fase.titolo : fase.titolo + " " + (i + 1) + " di " + n,
+          nota: fase.nota,
+          minuti: durata,
+          allarme: fase.allarme,
+        }));
+      });
+    }
+    function formatDurata(secondi) {
+      const s = Math.max(0, secondi);
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      const pad = (n) => String(n).padStart(2, "0");
+      if (h > 0) return h + ":" + pad(m) + ":" + pad(sec);
+      return m + ":" + pad(sec);
+    }
+    function formatMinuti(minuti) {
+      if (minuti < 60) return minuti + " min";
+      const h = Math.floor(minuti / 60);
+      const resto = minuti % 60;
+      if (resto === 0) return h + " h";
+      return h + " h " + resto + " min";
+    }
+    function formatNumero(n) {
+      const r = Math.round(n * 1000) / 1000;
+      return (Number.isInteger(r) ? String(r) : String(r)).replace(".", ",");
+    }
+    function ricettaAttuale() {
+      return RICETTE.find((r) => r.id === stato.ricettaId) || RICETTE[0];
+    }
+    function passiDi() { return espandi(ricettaAttuale().fasi); }
+    function valoreScala(scala) {
+      if (stato.scala[scalaKey(scala)] != null) return stato.scala[scalaKey(scala)];
+      return valoreIniziale(scala);
+    }
+    function scalaKey(scala) { return ricettaAttuale().id; }
+    function valoreIniziale(scala) {
+      if (scala.tipo === "teglia") return scala.baseLarghezza + "x" + scala.baseAltezza;
+      if (scala.tipo === "panetti" && scala.peso != null) return scala.base + "@" + scala.peso;
+      return String(scala.base);
+    }
+    function partiPanetti(valore) {
+      const [nRaw, pesoRaw] = String(valore).split("@");
+      const n = Number(String(nRaw).replace(",", "."));
+      const peso = pesoRaw == null || pesoRaw === "" ? null : Number(String(pesoRaw).replace(",", "."));
+      return {
+        n: Number.isFinite(n) && n > 0 ? n : 1,
+        peso: peso != null && Number.isFinite(peso) && peso > 0 ? peso : null,
+      };
+    }
+    function fattore(scala, valore) {
+      if (scala.tipo === "teglia") {
+        const [l, a] = String(valore).split("x");
+        const area = Math.max(1, Number(l) || 1) * Math.max(1, Number(a) || 1);
+        const base = scala.baseLarghezza * scala.baseAltezza;
+        return area / base;
+      }
+      if (scala.tipo === "panetti") {
+        const scelto = partiPanetti(valore);
+        const perConteggio = scelto.n / scala.base;
+        if (scala.peso == null) return perConteggio;
+        return perConteggio * ((scelto.peso ?? scala.peso) / scala.peso);
+      }
+      const n = Number(String(valore).replace(",", "."));
+      if (!Number.isFinite(n) || n <= 0) return 1;
+      return n / scala.base;
+    }
+    function dose(ingrediente, k) {
+      return ingrediente.parti.map((parte) => formatNumero(parte.n * k) + parte.testo).join(" + ");
+    }
+    function titoloScala(tipo) {
+      return { porzioni: "Porzioni", peso: "Peso", litri: "Litri", panetti: "Panetti", teglia: "Teglia" }[tipo];
+    }
+    function etichettaScelta(scala, valore) {
+      if (scala.tipo === "porzioni") return valore + " porzioni";
+      if (scala.tipo === "litri") return formatNumero(Number(valore)) + " l";
+      if (scala.tipo === "teglia") return String(valore).replace("x", "×");
+      if (scala.tipo === "panetti") return String(partiPanetti(valore).n);
+      return valore;
+    }
+
+    let audioCtx = null;
+    let sveglia = null;
+    function preparaAudio() {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtx) audioCtx = new AC();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+    }
+    function suona() {
+      preparaAudio();
+      if (!audioCtx) return;
+      if (navigator.vibrate) navigator.vibrate([180, 80, 180, 80, 240]);
+      const ora = audioCtx.currentTime;
+      [0, 0.45, 0.9].forEach((attesa) => {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = "sine";
+        o.frequency.value = 880;
+        o.connect(g);
+        g.connect(audioCtx.destination);
+        g.gain.setValueAtTime(0.0001, ora + attesa);
+        g.gain.exponentialRampToValueAtTime(0.25, ora + attesa + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, ora + attesa + 0.28);
+        o.start(ora + attesa);
+        o.stop(ora + attesa + 0.3);
+      });
+    }
+    async function tieniSveglio() {
+      if (!navigator.wakeLock) return;
+      try { sveglia = await navigator.wakeLock.request("screen"); } catch (e) {}
+    }
+    function mollaSveglia() {
+      if (sveglia) sveglia.release().catch(() => {});
+      sveglia = null;
+    }
+
+    function apri(id) {
+      const ricetta = RICETTE.find((r) => r.id === id);
+      if (!ricetta) return;
+      const primo = espandi(ricetta.fasi)[0];
+      stato.ricettaId = id;
+      stato.passoIndex = 0;
+      stato.finita = false;
+      stato.running = false;
+      stato.remaining = primo.minuti * 60;
+      stato.suonato = false;
+      stato.vista = "dettaglio";
+      mollaSveglia();
+      disegna();
+    }
+    function vaiA(index) {
+      const target = passiDi()[index];
+      stato.passoIndex = index;
+      stato.finita = false;
+      stato.running = false;
+      stato.remaining = target.minuti * 60;
+      stato.suonato = false;
+      if (stato.vista === "orologio") stato.vista = "dettaglio";
+      mollaSveglia();
+      disegna();
+    }
+    function fatto() {
+      const passi = passiDi();
+      if (stato.passoIndex >= passi.length - 1) {
+        stato.finita = true;
+        stato.running = false;
+        stato.vista = "dettaglio";
+        mollaSveglia();
+        disegna();
+        return;
+      }
+      vaiA(stato.passoIndex + 1);
+    }
+    function avvia() {
+      preparaAudio();
+      if (stato.remaining === 0) stato.remaining = passiDi()[stato.passoIndex].minuti * 60;
+      stato.running = true;
+      stato.endsAt = Date.now() + stato.remaining * 1000;
+      stato.vista = "orologio";
+      stato.suonato = false;
+      tieniSveglio();
+      disegna();
+    }
+    function pausa() {
+      leggiTempo();
+      stato.running = false;
+      mollaSveglia();
+      disegna();
+    }
+    function leggiTempo() {
+      if (!stato.running) return;
+      stato.remaining = Math.max(0, Math.round((stato.endsAt - Date.now()) / 1000));
+      if (stato.remaining === 0) {
+        stato.running = false;
+        const passo = passiDi()[stato.passoIndex];
+        if (passo && passo.allarme) {
+          stato.vista = "orologio";
+          if (!stato.suonato) {
+            stato.suonato = true;
+            suona();
+          }
+        }
+        mollaSveglia();
+      }
+    }
+
+    function anello(secondi, totale, grande) {
+      const r = 44;
+      const c = 2 * Math.PI * r;
+      const progress = totale === 0 ? 0 : secondi / totale;
+      const offset = c * (1 - progress);
+      const size = grande ? "100%" : "92";
+      return '<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="44" fill="none" stroke="' +
+        (grande ? "rgba(255,248,239,.35)" : "rgba(58,42,34,.15)") +
+        '" stroke-width="6"/><circle cx="50" cy="50" r="44" fill="none" stroke="' +
+        (grande ? "#fff8ef" : "#c4532a") +
+        '" stroke-width="6" stroke-linecap="round" stroke-dasharray="' + c.toFixed(2) +
+        '" stroke-dashoffset="' + offset.toFixed(2) +
+        '" transform="rotate(-90 50 50)"/></svg>';
+    }
+    function h(testo) {
+      return String(testo).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    }
+
+    function disegnaOggi() {
+      const carte = RICETTE.map((r) => {
+        const minuti = espandi(r.fasi).reduce((s, p) => s + p.minuti, 0);
+        return '<button class="scheda" data-id="' + r.id + '"><strong>' + h(r.nome) +
+          '</strong><span>' + formatMinuti(minuti) + '</span></button>';
+      }).join("");
+      return '<div class="palco"><h1 class="titolo">Cosa cuciniamo oggi?</h1><div class="cuoco"><video playsinline muted autoplay src="' +
+        LOOP[0] + '"></video></div><div class="griglia">' + carte + '</div></div>';
+    }
+    function controlliScala(ricetta) {
+      const scala = ricetta.scala;
+      const valore = valoreScala(scala);
+      if (scala.tipo === "porzioni" || scala.tipo === "litri" || scala.tipo === "teglia") {
+        const scelte = scala.tipo === "teglia"
+          ? scala.scelte.map((t) => t.larghezza + "x" + t.altezza)
+          : scala.scelte.map(String);
+        return '<div class="chip-riga">' + scelte.map((scelta) => {
+          const attiva = String(valore) === String(scelta) ? " attiva" : "";
+          return '<button class="chip' + attiva + '" data-scala="' + h(scelta) + '">' + h(etichettaScelta(scala, scelta)) + '</button>';
+        }).join("") + '</div>';
+      }
+      if (scala.tipo === "panetti") {
+        const scelto = partiPanetti(valore);
+        const chips = scala.scelte.map((n) => {
+          const attiva = scelto.n === n ? " attiva" : "";
+          return '<button class="chip' + attiva + '" data-panetti="' + n + '">' + n + '</button>';
+        }).join("");
+        const peso = scelto.peso ?? scala.peso;
+        return '<div class="chip-riga"><span>Panetti</span>' + chips +
+          '<label>g <input class="peso" inputmode="decimal" value="' + h(peso) + '"></label></div>';
+      }
+      return "";
+    }
+    function disegnaDettaglio() {
+      const ricetta = ricettaAttuale();
+      const passi = passiDi();
+      const passo = passi[Math.min(stato.passoIndex, passi.length - 1)];
+      const k = fattore(ricetta.scala, valoreScala(ricetta.scala));
+      const totaleMin = passi.reduce((s, p) => s + p.minuti, 0);
+      const dosi = ricetta.ingredienti.map((i) =>
+        '<div class="dose"><span>' + h(i.nome) + '</span><b>' + h(dose(i, k)) + '</b></div>'
+      ).join("");
+      const lista = passi.map((p, index) => {
+        const qui = !stato.finita && index === stato.passoIndex;
+        return '<div class="linea' + (qui ? " qui" : "") + '"><i class="punto"></i><div><div class="riga"><span class="nome">' +
+          h(p.titolo) + '</span><span class="meta">' + formatMinuti(p.minuti) + (p.allarme ? " · allarme" : "") +
+          '</span></div>' + (qui ? '<p class="nota">' + h(p.nota) + '</p>' : '') + '</div></div>';
+      }).join("");
+      const corpo = stato.finita
+        ? '<div class="fine"><h2>Finita</h2><p class="nota">Spegni il timer. La ricetta resta qui.</p><button class="fatto" data-azione="daccapo" style="width:100%">Daccapo</button></div>'
+        : '<p class="tocca">Tocca l’orologio per aprirlo</p><div class="adesso"><button class="anello" data-azione="orologio" aria-label="Apri l’orologio">' +
+          anello(stato.remaining, passo.minuti * 60, false) + '<em>' + formatDurata(stato.remaining) +
+          '</em></button><div><h3>' + h(passo.titolo) + '</h3><p>' + h(passo.nota) +
+          '</p></div></div><div class="azioni"><button class="fatto" data-azione="fatto">Fatto</button><button class="avvia" data-azione="' +
+          (stato.running ? "pausa" : "avvia") + '">' + (stato.running ? "Pausa" : "Avvia") +
+          '</button></div><button class="indietro" data-azione="indietro"' + (stato.passoIndex === 0 ? " disabled" : "") + '>Indietro</button>' +
+          (stato.remaining === 0 && passo.allarme ? '<div class="allarme"><strong>Allarme.</strong> Il tempo di questo passo è finito.</div>' : '');
+      return '<div class="foglio"><header class="testa"><div class="riga"><button class="ghost" data-azione="home">Home</button><span class="passo-n">' +
+        (stato.finita ? "finita" : "passo " + (stato.passoIndex + 1) + " di " + passi.length) +
+        '</span></div><h1>' + h(ricetta.nome) + '</h1><p class="prep">tempo di preparazione</p><p class="durata">' +
+        formatMinuti(totaleMin) + '</p></header><section class="blocco"><h2>' + titoloScala(ricetta.scala.tipo) +
+        '</h2>' + controlliScala(ricetta) + '</section><section class="blocco"><h2>Ingredienti</h2>' + dosi +
+        '</section><section class="blocco"><h2>Procedimento</h2>' + corpo + lista + '</section></div>';
+    }
+    function disegnaOrologio() {
+      const ricetta = ricettaAttuale();
+      const passi = passiDi();
+      const passo = passi[stato.passoIndex];
+      const prossimo = stato.passoIndex < passi.length - 1 ? passi[stato.passoIndex + 1] : null;
+      const scaduto = passo.allarme && stato.remaining === 0;
+      const statoTesto = scaduto ? "tempo scaduto" : stato.running ? "in corso" : "in pausa";
+      const dopo = prossimo
+        ? '<div class="dopo"><p class="etichetta">Dopo · ' + formatMinuti(prossimo.minuti) + (prossimo.allarme ? " · allarme" : "") +
+          '</p><h2>' + h(prossimo.titolo) + '</h2><p class="nota">' + h(prossimo.nota) + '</p></div>'
+        : '<p class="etichetta">Ultimo passo di questa ricetta.</p>';
+      return '<div class="orologio' + (scaduto ? " scaduto" : "") + '" data-azione="riduci" role="button" tabindex="0"><p class="etichetta">' +
+        h(ricetta.nome) + ' · tocca per tornare alla ricetta</p>' + anello(stato.remaining, passo.minuti * 60, true) +
+        '<div class="tempo">' + formatDurata(stato.remaining) + '</div><p class="stato">' + statoTesto +
+        '</p><p class="etichetta">' + (passo.allarme ? "Adesso · suona allo zero" : "Adesso") + '</p><h1>' +
+        h(passo.titolo) + '</h1><p class="nota">' + h(passo.nota) + '</p>' + dopo +
+        (scaduto ? '<div class="allarme"><strong>Allarme.</strong> Il tempo di questo passo è finito.</div>' : '') +
+        '</div>';
+    }
+    function disegna() {
+      const app = document.getElementById("app");
+      const videoPrima = app.querySelector("video");
+      const posa = videoPrima ? LOOP.indexOf(videoPrima.getAttribute("src")) : 0;
+      const tieniVideo = stato.vista === "oggi" && videoPrima;
+      if (stato.vista === "oggi") app.innerHTML = disegnaOggi();
+      else if (stato.vista === "orologio") app.innerHTML = disegnaOrologio();
+      else app.innerHTML = disegnaDettaglio();
+      document.title = stato.vista === "oggi" ? "Ricette" : ricettaAttuale().nome;
+      if (stato.vista === "oggi") {
+        const video = app.querySelector("video");
+        let i = posa >= 0 ? posa : 0;
+        if (tieniVideo && videoPrima.readyState > 0) {
+          video.replaceWith(videoPrima);
+        }
+        const attivo = app.querySelector("video");
+        attivo.src = LOOP[i];
+        attivo.play().catch(() => {});
+        attivo.onended = () => {
+          i = (i + 1) % LOOP.length;
+          attivo.src = LOOP[i];
+          attivo.play().catch(() => {});
+        };
+      }
+      app.onclick = (event) => {
+        const nodo = event.target.closest("[data-id],[data-azione],[data-scala],[data-panetti]");
+        if (!nodo) return;
+        if (nodo.dataset.id) apri(nodo.dataset.id);
+        if (nodo.dataset.scala) {
+          stato.scala[ricettaAttuale().id] = nodo.dataset.scala;
+          disegna();
+        }
+        if (nodo.dataset.panetti) {
+          const scala = ricettaAttuale().scala;
+          const peso = partiPanetti(valoreScala(scala)).peso ?? scala.peso;
+          stato.scala[ricettaAttuale().id] = nodo.dataset.panetti + "@" + peso;
+          disegna();
+        }
+        const azione = nodo.dataset.azione;
+        if (azione === "home") { stato.vista = "oggi"; stato.running = false; mollaSveglia(); disegna(); }
+        if (azione === "orologio") { stato.vista = "orologio"; disegna(); }
+        if (azione === "riduci") { stato.vista = "dettaglio"; disegna(); }
+        if (azione === "fatto") fatto();
+        if (azione === "avvia") avvia();
+        if (azione === "pausa") pausa();
+        if (azione === "indietro" && stato.passoIndex > 0) vaiA(stato.passoIndex - 1);
+        if (azione === "daccapo") apri(stato.ricettaId);
+      };
+      const peso = app.querySelector(".peso");
+      if (peso) {
+        peso.onclick = (event) => event.stopPropagation();
+        peso.oninput = () => {
+          const scala = ricettaAttuale().scala;
+          const n = partiPanetti(valoreScala(scala)).n;
+          stato.scala[ricettaAttuale().id] = n + "@" + peso.value;
+          const k = fattore(scala, stato.scala[ricettaAttuale().id]);
+          app.querySelectorAll(".dose b").forEach((cella, index) => {
+            cella.textContent = dose(ricettaAttuale().ingredienti[index], k);
+          });
+        };
+      }
+    }
+
+    setInterval(() => {
+      if (!stato.running && stato.remaining !== 0) return;
+      const prima = stato.remaining;
+      const vista = stato.vista;
+      leggiTempo();
+      if (stato.remaining !== prima || stato.vista !== vista) disegna();
+    }, 250);
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && stato.running) tieniSveglio();
+      leggiTempo();
+      disegna();
+    });
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js").catch(() => {});
+    }
+    disegna();
+  </script>
+</body>
+</html>
