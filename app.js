@@ -13,7 +13,12 @@ const S = {
   spunte: leggi("ricette-spunte", {}),
   crono: {},
   timerIndice: -1,
+  create: leggi("ricette-create", []),
 };
+
+function elenco() {
+  return RICETTE.concat(S.create);
+}
 
 function leggi(chiave, fallback) {
   try {
@@ -61,13 +66,13 @@ function passiRicetta(ricetta, bozza) {
 function bozzaEffettiva(i) {
   const c = S.crono[i];
   if (c && c.impasto) return c.impasto;
-  const ricetta = RICETTE[i];
+  const ricetta = elenco()[i];
   if (ricetta.impasto === true || ricetta.impasto === false) return preset(ricetta.impasto);
   return null;
 }
 
 function passiDi(i) {
-  return passiRicetta(RICETTE[i], bozzaEffettiva(i));
+  return passiRicetta(elenco()[i], bozzaEffettiva(i));
 }
 
 function formatMinuti(minuti) {
@@ -116,7 +121,7 @@ function valoreIniziale(ricetta) {
 
 function cronometro(i) {
   if (!S.crono[i]) {
-    const ricetta = RICETTE[i];
+    const ricetta = elenco()[i];
     S.crono[i] = {
       passo: 0,
       secondi: -1,
@@ -146,12 +151,12 @@ function corrisponde(ricetta, chip, query, soloPreferiti) {
 }
 
 function filtrati() {
-  return RICETTE.filter((r) => corrisponde(r, [...S.chip], S.ricerca, S.soloPreferiti));
+  return elenco().filter((r) => corrisponde(r, [...S.chip], S.ricerca, S.soloPreferiti));
 }
 
 function conteggio(chip) {
   const altre = [...S.chip].filter((c) => c !== chip);
-  return RICETTE.filter((r) => r.chip.includes(chip) && corrisponde(r, altre, S.ricerca, S.soloPreferiti)).length;
+  return elenco().filter((r) => r.chip.includes(chip) && corrisponde(r, altre, S.ricerca, S.soloPreferiti)).length;
 }
 
 function spuntato(nomeRicetta, nomeIng) {
@@ -168,7 +173,7 @@ function alternaSpunta(nomeRicetta, nomeIng) {
 }
 
 function dosiVisibili(i) {
-  const ricetta = RICETTE[i];
+  const ricetta = elenco()[i];
   const c = cronometro(i);
   if (c.impasto) return Calcola.scheda(c.impasto).dosi;
   const k = fattoreScala(ricetta, c.scala);
@@ -215,9 +220,10 @@ RICETTE.forEach((ricetta) => {
 
 function disegna() {
   document.getElementById("app").onclick = null;
-  document.title = S.vista === "oggi" ? "Ricette" : RICETTE[S.indice].nome;
+  document.title = S.vista === "oggi" ? "Ricette" : elenco()[S.indice].nome;
   if (S.vista === "oggi") disegnaOggi();
   else if (S.vista === "orologio") disegnaOrologio();
+  else if (S.vista === "nuova") disegnaNuova();
   else disegnaDettaglio();
   tieniSveglio(Object.values(S.crono).some((c) => c.inCorsa));
 }
@@ -225,12 +231,14 @@ function disegna() {
 function disegnaOggi() {
   const app = document.getElementById("app");
   app.innerHTML =
-    '<div class="schermo"><header class="testa-oggi"><img class="cuoco" src="media/cuoco.jpg" alt="Cuoco della copertina">' +
-    '<h1>Cosa cuciniamo oggi?</h1><div class="cerca-riga"><input class="cerca" id="cerca" placeholder="Cerca piatto o ingrediente" value="' +
+    '<div class="schermo"><div class="palco"><h1>Cosa cuciniamo oggi?</h1>' +
+    '<img class="cuoco-grande" src="media/cuoco.png" alt="Cuoco della copertina"></div>' +
+    '<header class="testa-oggi"><div class="cerca-riga"><input class="cerca" id="cerca" placeholder="Cerca piatto o ingrediente" value="' +
     h(S.ricerca) + '"><button class="icona" id="chiudi" type="button" aria-label="Cancella ricerca">×</button>' +
     '<button class="preferiti" id="preferiti" type="button"></button></div></header>' +
     '<div class="pannello" id="chip"></div><p class="badge" id="badge"></p><div class="griglia" id="griglia"></div>' +
-    '<div class="vuoto" id="vuoto" hidden><p>Nessuna ricetta con questa combinazione</p><button type="button" id="mostra">Mostra tutte</button></div></div>';
+    '<div class="vuoto" id="vuoto" hidden><p>Nessuna ricetta con questa combinazione</p><button type="button" id="mostra">Mostra tutte</button></div>' +
+    '<button class="fab" id="fab" type="button" aria-label="Nuova ricetta">+</button></div>';
   const cerca = document.getElementById("cerca");
   cerca.addEventListener("input", () => {
     S.ricerca = cerca.value;
@@ -274,6 +282,10 @@ function disegnaOggi() {
     S.vista = "dettaglio";
     disegna();
   };
+  document.getElementById("fab").onclick = () => {
+    S.vista = "nuova";
+    disegna();
+  };
   aggiornaIndice();
 }
 
@@ -306,12 +318,12 @@ function aggiornaIndice() {
       : "";
     return '<div class="chip-riga"><span class="gruppo">' + gruppo[0] + '</span><div class="scorrimento">' + pills + "</div>" + azzera + "</div>";
   }).join("");
-  const elenco = filtrati();
-  document.getElementById("badge").textContent = elenco.length === 1 ? "1 ricetta" : elenco.length + " ricette";
-  document.getElementById("vuoto").hidden = elenco.length > 0;
-  document.getElementById("griglia").hidden = elenco.length === 0;
-  document.getElementById("griglia").innerHTML = elenco.map((ricetta) => {
-    const i = RICETTE.indexOf(ricetta);
+  const voci = filtrati();
+  document.getElementById("badge").textContent = voci.length === 1 ? "1 ricetta" : voci.length + " ricette";
+  document.getElementById("vuoto").hidden = voci.length > 0;
+  document.getElementById("griglia").hidden = voci.length === 0;
+  document.getElementById("griglia").innerHTML = voci.map((ricetta) => {
+    const i = elenco().indexOf(ricetta);
     const acceso = S.preferiti.includes(ricetta.nome);
     const c = S.crono[i];
     const passi = passiRicetta(ricetta, bozzaEffettiva(i));
@@ -337,7 +349,7 @@ function titoloScala(ricetta) {
 
 function disegnaDettaglio() {
   const i = S.indice;
-  const ricetta = RICETTE[i];
+  const ricetta = elenco()[i];
   const c = cronometro(i);
   const passi = passiDi(i);
   const passo = passi[c.passo] || null;
@@ -352,7 +364,7 @@ function disegnaDettaglio() {
   const ingredienti = ricetta.impasto == null
     ? '<details class="sezione" open><summary>INGREDIENTI</summary>' + dosiHtml + "</details>"
     : '<section class="blocco"><h2>DOSI</h2>' + dosiHtml + "</section>";
-  const elenco = passi.map((p, index) =>
+  const passiHtml = passi.map((p, index) =>
     '<button type="button" class="passo' + (index === c.passo ? " attivo" : "") + '" data-passo="' + index + '">' + h(p.titolo) +
     '</button><p class="passo-nota">' + h(p.nota) + '</p><p class="passo-min" data-minuti="' + index + '">' + formatMinuti(p.minuti) + "</p>"
   ).join("");
@@ -363,7 +375,7 @@ function disegnaDettaglio() {
     '<div class="foglio"><header class="testa-ricetta"><div class="riga"><button type="button" class="oggi" data-azione="oggi">Oggi</button></div><h1>' +
     h(ricetta.nome) + '</h1><p class="prep" id="durata">tempo di preparazione  ' + formatMinuti(minutiTot) +
     '</p></header><div class="corpo">' + scala + ingredienti +
-    '<details class="sezione"><summary>PROCEDIMENTO</summary>' + elenco + '</details><div class="adesso"><h2 id="passo-titolo">' +
+    '<details class="sezione"><summary>PROCEDIMENTO</summary>' + passiHtml + '</details><div class="adesso"><h2 id="passo-titolo">' +
     h(passo ? passo.titolo : "Finito") + '</h2><p id="passo-nota">' + h(passo ? passo.nota : "Puoi ricominciare da capo.") +
     '</p><p class="tempo" id="tempo">' + formatSecondi(passo ? c.secondi : 0) + '</p></div></div><div class="azioni">' + azioni + "</div></div>";
   document.getElementById("app").onclick = onclickDettaglio;
@@ -433,7 +445,7 @@ function onclickDettaglio(event) {
     disegnaDettaglio();
   }
   if (nodo.dataset.dose) {
-    alternaSpunta(RICETTE[S.indice].nome, nodo.dataset.dose);
+    alternaSpunta(elenco()[S.indice].nome, nodo.dataset.dose);
     nodo.classList.toggle("spunta");
   }
   if (nodo.dataset.passo != null) vaiAlPasso(Number(nodo.dataset.passo));
@@ -561,9 +573,109 @@ function ferma(i) {
   if (S.timerIndice === i) S.timerIndice = -1;
 }
 
+function rigaIngrediente(nome, dose) {
+  return '<div class="riga-ing"><input type="text" data-nome placeholder="nome" value="' + h(nome || "") +
+    '"><input class="stretto" type="text" data-dose placeholder="dose" value="' + h(dose || "") +
+    '"><button type="button" class="mini" data-togli-ing aria-label="Togli">−</button></div>';
+}
+
+function rigaFase(fase) {
+  const f = fase || { titolo: "", nota: "", minuti: "", ripetizioni: "1", allarme: false };
+  return '<div class="riga-fase"><input type="text" data-titolo placeholder="titolo" value="' + h(f.titolo) +
+    '"><input class="stretto" inputmode="numeric" data-minuti placeholder="min" value="' + h(f.minuti) +
+    '"><input class="stretto" inputmode="numeric" data-rip placeholder="rip." value="' + h(f.ripetizioni || "1") +
+    '"><label class="mini"><input type="checkbox" data-allarme' + (f.allarme ? " checked" : "") + '> allarme</label>' +
+    '<button type="button" class="mini" data-togli-fase aria-label="Togli">−</button></div>' +
+    '<input type="text" data-nota placeholder="nota" value="' + h(f.nota || "") + '">';
+}
+
+function disegnaNuova() {
+  const chip = GRUPPI.flatMap((g) => g[1]).map((nome) =>
+    '<button type="button" class="chip" data-nuova-chip="' + h(nome) + '">' + h(nome) + "</button>"
+  ).join("");
+  document.getElementById("app").innerHTML =
+    '<div class="foglio"><header class="testa-ricetta"><div class="riga"><button type="button" class="oggi" id="annulla">Oggi</button></div>' +
+    '<h1>Nuova ricetta</h1></header><form class="corpo modulo" id="scheda">' +
+    '<label>Nome <input type="text" name="nome" required></label>' +
+    '<label>Sottotitolo <input type="text" name="sottotitolo"></label>' +
+    '<div class="riga-campi"><label>Porzioni <input name="base" inputmode="numeric" value="4"></label>' +
+    '<label>Scelte <input name="scelte" value="2 4 6"></label></div>' +
+    '<div class="pillole" id="chip-nuova">' + chip + '</div>' +
+    '<h2>Ingredienti</h2><div id="ingredienti">' + rigaIngrediente() + '</div>' +
+    '<button type="button" class="mini" id="add-ing">Aggiungi ingrediente</button>' +
+    '<h2>Fasi</h2><div id="fasi">' + rigaFase() + '</div>' +
+    '<button type="button" class="mini" id="add-fase">Aggiungi fase</button>' +
+    '<p class="errore" id="errore-nuova" hidden></p>' +
+    '<button type="submit" class="fatto salva">Salva</button></form></div>';
+  document.getElementById("annulla").onclick = () => { S.vista = "oggi"; disegna(); };
+  document.getElementById("add-ing").onclick = () => {
+    document.getElementById("ingredienti").insertAdjacentHTML("beforeend", rigaIngrediente());
+  };
+  document.getElementById("add-fase").onclick = () => {
+    document.getElementById("fasi").insertAdjacentHTML("beforeend", rigaFase());
+  };
+  document.getElementById("chip-nuova").onclick = (event) => {
+    const chip = event.target.closest("[data-nuova-chip]");
+    if (chip) chip.classList.toggle("attiva");
+  };
+  document.getElementById("scheda").onclick = (event) => {
+    if (event.target.closest("[data-togli-ing]")) event.target.closest(".riga-ing").remove();
+    if (event.target.closest("[data-togli-fase]")) {
+      const riga = event.target.closest(".riga-fase");
+      const nota = riga.nextElementSibling;
+      if (nota && nota.matches("[data-nota]")) nota.remove();
+      riga.remove();
+    }
+  };
+  document.getElementById("scheda").onsubmit = (event) => {
+    event.preventDefault();
+    const form = event.target;
+    const nome = form.nome.value.trim();
+    const errore = document.getElementById("errore-nuova");
+    const ingredienti = [...document.querySelectorAll(".riga-ing")].map((riga) => ({
+      nome: riga.querySelector("[data-nome]").value.trim(),
+      quantita: riga.querySelector("[data-dose]").value.trim(),
+    })).filter((i) => i.nome);
+    const fasi = [...document.querySelectorAll(".riga-fase")].map((riga) => {
+      const nota = riga.nextElementSibling;
+      return {
+        titolo: riga.querySelector("[data-titolo]").value.trim() || "Passo",
+        nota: nota && nota.matches("[data-nota]") ? nota.value.trim() : "",
+        minuti: Math.max(1, Number(riga.querySelector("[data-minuti]").value) || 1),
+        ripetizioni: Math.max(1, Number(riga.querySelector("[data-rip]").value) || 1),
+        allarme: riga.querySelector("[data-allarme]").checked,
+        orologio: "fisso",
+      };
+    }).filter((f) => f.titolo);
+    if (!nome || !fasi.length) {
+      errore.hidden = false;
+      errore.textContent = "Servono un nome e almeno una fase.";
+      return;
+    }
+    const base = Math.max(1, Number(form.base.value) || 4);
+    const scelte = form.scelte.value.split(/[^\d]+/).map(Number).filter((n) => n > 0);
+    if (!scelte.includes(base)) scelte.unshift(base);
+    S.create.push({
+      id: "creata-" + Date.now(),
+      nome,
+      sottotitolo: form.sottotitolo.value.trim(),
+      chip: [...document.querySelectorAll("[data-nuova-chip].attiva")].map((n) => n.dataset.nuovaChip),
+      porzioni: base,
+      scelte,
+      impasto: null,
+      ingredienti,
+      fasi,
+    });
+    salva("ricette-create", S.create);
+    S.indice = elenco().length - 1;
+    S.vista = "dettaglio";
+    disegna();
+  };
+}
+
 function disegnaOrologio() {
   const i = S.indice;
-  const ricetta = RICETTE[i];
+  const ricetta = elenco()[i];
   const c = cronometro(i);
   const passi = passiDi(i);
   const passo = passi[c.passo] || null;

@@ -1,10 +1,10 @@
-const CACHE = "ricette-cucina-2";
-const FILES = ["./index.html", "./app.js", "./calcola.js", "./ricette.js", "./manifest.webmanifest", "./media/cuoco.jpg"];
+const CACHE = "ricette-cucina-3";
+const FILES = ["./index.html", "./app.js", "./calcola.js", "./ricette.js", "./manifest.webmanifest", "./media/cuoco.png", "./media/cucina.jpg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE).then((cache) =>
-      Promise.all(FILES.map((file) => fetch(file + "?v=2", { cache: "reload" }).then((response) => cache.put(file, response))))
+      Promise.all(FILES.map((file) => fetch(file + "?v=3", { cache: "reload" }).then((response) => cache.put(file, response))))
     )
   );
   self.skipWaiting();

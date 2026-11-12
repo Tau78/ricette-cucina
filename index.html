@@ -37,22 +37,44 @@
     body { overflow-x: clip; }
     .schermo, .foglio, .orologio { width: 100%; max-width: 880px; margin: 0 auto; min-height: 100dvh; }
     .preferiti { flex: 0 0 auto; }
+    .palco {
+      position: relative;
+      height: 62dvh;
+      min-height: 440px;
+      background: #f3e6d0 url("media/cucina.jpg") center bottom / cover no-repeat;
+      overflow: hidden;
+    }
+    .palco h1 {
+      position: absolute;
+      z-index: 2;
+      top: calc(10px + env(safe-area-inset-top));
+      left: 50%;
+      right: 16px;
+      margin: 0;
+      font-family: Palatino, "Iowan Old Style", Georgia, serif;
+      font-size: clamp(1.55rem, 5.6vw, 2.15rem);
+      line-height: 1.05;
+      font-weight: 600;
+    }
+    .cuoco-grande {
+      position: absolute;
+      z-index: 1;
+      left: 2%;
+      bottom: 0;
+      height: 100%;
+      width: auto;
+      max-width: 62%;
+      object-fit: contain;
+      object-position: left bottom;
+      pointer-events: none;
+    }
     .testa-oggi {
       display: flex;
-      flex-wrap: wrap;
       align-items: center;
-      gap: 8px 12px;
+      gap: 8px;
       background: var(--terracotta);
       color: var(--bianco);
-      padding: calc(12px + env(safe-area-inset-top)) 16px 12px;
-    }
-    .cuoco { width: 72px; height: 96px; object-fit: contain; flex: 0 0 auto; }
-    .testa-oggi h1 {
-      margin: 0;
-      flex: 1 1 160px;
-      font-size: 1.25rem;
-      line-height: 1.15;
-      font-weight: 700;
+      padding: 12px 16px;
     }
     .cerca-riga { display: flex; align-items: center; gap: 8px; flex: 1 1 100%; min-width: 0; }
     .cerca {
@@ -83,10 +105,43 @@
       padding: 8px 8px 8px 12px;
       overflow: hidden;
     }
-    @media (max-width: 700px) {
-      .testa-oggi { display: grid; grid-template-columns: 72px minmax(0, 1fr); }
-      .cerca-riga { grid-column: 1 / -1; }
+    .fab {
+      position: fixed;
+      z-index: 6;
+      right: 16px;
+      bottom: calc(16px + env(safe-area-inset-bottom));
+      width: 56px;
+      height: 56px;
+      border: 0;
+      border-radius: 50%;
+      background: var(--terracotta);
+      color: var(--bianco);
+      font-size: 2rem;
+      line-height: 1;
+      padding: 0;
     }
+    .modulo { display: flex; flex-direction: column; gap: 8px; }
+    .modulo label { display: flex; flex-direction: column; gap: 2px; font-size: 0.75rem; color: var(--soft); }
+    .modulo input[type="text"], .modulo input[type="number"], .modulo input:not([type]) {
+      min-height: 36px;
+      border: 1px solid var(--bordo);
+      border-radius: 12px;
+      padding: 0 10px;
+      background: var(--bianco);
+      font-size: 1rem;
+    }
+    .riga-campi, .riga-fase, .riga-ing { display: flex; gap: 8px; align-items: center; }
+    .riga-campi label, .riga-ing input, .riga-fase input { flex: 1; min-width: 0; }
+    .riga-fase input.stretto, .riga-ing input.stretto { flex: 0 0 4.2rem; }
+    .modulo .mini {
+      border: 0;
+      background: transparent;
+      color: var(--terracotta);
+      min-height: 36px;
+      padding: 0;
+      font-weight: 700;
+    }
+    .modulo .salva { margin-top: 8px; }
     .chip-riga { display: flex; align-items: center; gap: 8px; }
     .chip-riga + .chip-riga { margin-top: 8px; }
     .gruppo { width: 4.6rem; flex: 0 0 auto; font-size: 0.82rem; color: var(--soft); font-weight: 700; }
@@ -108,7 +163,7 @@
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
       gap: 8px;
-      padding: 0 12px calc(16px + env(safe-area-inset-bottom));
+      padding: 0 12px calc(84px + env(safe-area-inset-bottom));
     }
     .carta {
       display: flex;
